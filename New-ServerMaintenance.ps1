@@ -1,10 +1,11 @@
-$EventLogNames = @("Application", "System")
-$evtlogsummary = @() # create log summary
-# $basepath = "C:\temp"
-
 param(
     [Parameter(Mandatory=$true)]$basepath
     )
+
+$EventLogNames = @("Application", "System")
+$evtlogsummary = @() # create log summary
+$addtlmaint = @() # Populate with additional maintenance types
+# $basepath = "C:\temp"
 
 # region additional maintenance functions
     function Start-ADMaintenance {
@@ -81,7 +82,7 @@ param(
         
         # If roles are detected, start respective separate maintenance script
         Switch ($installedroles.name) {            
-            "AD-Domain-Services" {Start-ADMaintenance -basepath $basepath}
+            "AD-Domain-Services" {$addtlmaint += "AD-Domain-Services"}
             # "FS-DFS-Replication" {}
             # "Hyper-V" {}
         }

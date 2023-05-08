@@ -1,9 +1,9 @@
-$EventLogNames = @("DFS Replication", "Directory Service", "DNS Server")
-$evtlogsummary = @() # create log summary
-
 param(
     [Parameter(Mandatory=$true)]$basepath
     )
+
+$EventLogNames = @("DFS Replication", "Directory Service", "DNS Server")
+$evtlogsummary = @() # create log summary
 
 function Get-ADDSInfo {
     # Collect Forest-level information
