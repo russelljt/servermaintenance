@@ -5,3 +5,10 @@ function Get-NetInfo{
         $netadapter | Select-Object -Property Description,MacAddress,IPAddress 
     }  
 }
+
+Get-NetInfo
+
+$netadapters = Get-NetAdapter | Where-Object Status -eq Up
+foreach ($netadapter in $netadapters){
+    
+}

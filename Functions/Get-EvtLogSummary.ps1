@@ -1,15 +1,13 @@
-$EventLogNames = '' # "Application", "System", "DFS Replication", "Directory Service", "DNS Server"
-$evtlogsummary = @() # create log summary
-
 function Get-EvtLogsSummary {
-
+    $startdate = (Get-Date).AddDays(-30)
+    
     foreach ($EventLog in $EventLogNames) {
-        $reviewlog = Get-WinEvent -LogName $EventLog -FilterXPath "*[System[(Level=1 or Level=2 or Level=3)]]"
+        $reviewlog = Get-WinEvent -FilterHashtable @{ LogName=$EventLog; Level=1,2,3; StartTime=$startdate }
         $logsum = $reviewlog | Sort-Object -Property Id -Unique -Descending #| sort-object -Property ID -Descending
         $idcounts = $reviewlog | Group-Object -Property ID | Sort-Object -Property Count -Descending | Select-Object Count,Name | Format-Table
-
-        $evtlogsummary += $logsum
+        Write-Output "::$EventLog Event Log::"
         $evtlogsummary += $idcounts
+        $evtlogsummary += $logsum        
         }
+    return $evtlogsummary
     }
-

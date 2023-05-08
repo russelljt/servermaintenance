@@ -1,4 +1,9 @@
-param([Parameter(Mandatory=$true)]$basepath)
+$EventLogNames = @("DFS Replication", "Directory Service", "DNS Server")
+$evtlogsummary = @() # create log summary
+
+param(
+    [Parameter(Mandatory=$true)]$basepath
+    )
 
 function Get-ADDSInfo {
     # Collect Forest-level information
@@ -10,7 +15,7 @@ function Get-ADDSInfo {
     Write-Output "Active Directory Forest configuration"
     $adforest | Select-Object Name,ForestMode,RootDomain,SchemaMaster,DomainNamingMaster | Format-List
     Write-Output "Forest DNS Zone Master"
-    [adsi]$forestdns | Select-Object -ExpandProperty fsmoRoleOwner | 
+    [adsi]$forestdns | Select-Object -ExpandProperty fsmoRoleOwner | Format-List
     Write-Output `n
     Write-Output "UPN Suffixes"
     $adforest | Select-Object -ExpandProperty UPNSuffixes | Format-List
@@ -78,10 +83,23 @@ function Get-ReplStatus {
     $repstatus.queue = $repqueue.Trim()
     $repstatus.showrepl = $showrepl.Trim()
     Return $repstatus
-
 }
 
-function Start-ADMaint{
+function Get-EvtLogsSummary {
+    $startdate = (Get-Date).AddDays(-30)
+    
+    foreach ($EventLog in $EventLogNames) {
+        $reviewlog = Get-WinEvent -FilterHashtable @{ LogName=$EventLog; Level=1,2,3; StartTime=$startdate }
+        $logsum = $reviewlog | Sort-Object -Property Id -Unique -Descending #| sort-object -Property ID -Descending
+        $idcounts = $reviewlog | Group-Object -Property ID | Sort-Object -Property Count -Descending | Select-Object Count,Name | Format-Table
+        Write-Output "::$EventLog Event Log::"
+        $evtlogsummary += $idcounts
+        $evtlogsummary += $logsum        
+        }
+    return $evtlogsummary
+    }
+
+function Start-ADMaintenance{
     [Cmdletbinding()]
     param([string]$Computername,
     $basepath
@@ -105,6 +123,7 @@ function Start-ADMaint{
         $dcdiag = Get-DCDiag
         $frsstate = Get-FRSState
         $replstatus = Get-ReplStatus
+        $events = Get-EvtLogsSummary
 
         Write-Output "******AD Maintenance Report******"
         Write-Output "Current Date: $date"
@@ -119,7 +138,12 @@ function Start-ADMaint{
         Write-Output `n
         Write-Output "*** Replication Status ***"
         $replstatus.repsum
+        Write-Output `n
+        Write-Output "*** Replication Status ***"
+        $events
 
     ) *>&1 >> $maintlog
     
 }
+
+Start-ADMaintenance -basepath $basepath
