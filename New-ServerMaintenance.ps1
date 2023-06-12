@@ -74,17 +74,9 @@ $evtlogsummary = @() # create log summary
         $roles = (($includedroles | ForEach-Object {[regex]::Escape($_)}) -join "|")
     
         $installedroles = Get-WindowsFeature | Where-Object {($_.InstallState -eq "Installed") -and ($_.name -match $roles)} | Select-Object Name
-        $rolesout = $installedroles | Format-Table -Autosize
         
-        # If roles are detected, start respective separate maintenance script
-        Switch ($installedroles.name) {            
-            "AD-Domain-Services" { Start-ADMaintenance }
-            # "FS-DFS-Replication" {$addtlmaint += }
-            # "Hyper-V" {$addtlmaint += }
-        }
-
         Write-Output ":::Installed Server Roles:::"
-        return $rolesout
+        return $installedroles | Format-Table -Autosize
     }
 
     # Collect PowerShell version information
@@ -365,6 +357,7 @@ $evtlogsummary = @() # create log summary
             Write-Output `n
             Write-Output ("######################### Maintenance Report Complete #########################")
 
+            # If roles are detected, start respective separate maintenance script
             Switch ($installedroles.name) {            
                 "AD-Domain-Services" { Start-ADMaintenance }
                 # "FS-DFS-Replication" {$addtlmaint += }
@@ -372,7 +365,6 @@ $evtlogsummary = @() # create log summary
             }
 
         ) *>&1 >> $maintlog
-
     }
 
     Start-Maintenance -basepath $basepath
