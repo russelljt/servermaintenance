@@ -1,7 +1,7 @@
 param(
-    [Parameter(Mandatory=$true)]$basepath
+    [Parameter()]$basepath
     )
-
+    
 $EventLogNames = @("DFS Replication", "Directory Service", "DNS Server")
 $evtlogsummary = @() # create log summary
 
@@ -111,7 +111,7 @@ function Start-ADMaintenance{
     $maintfile = "maint_report-AD-$env:USERDOMAIN-"+(Get-Date -Format "MMddyyyy")+".log"
     $maintlog = "$maintpath\$maintfile"
 
-    if (Test-Path $maintpath -eq $True) { 
+    if (Test-Path $maintpath) { 
         Write-Verbose "($maintpath) already exists" -Verbose 
     } else { 
         New-Item -ItemType Directory -Path $maintpath -Force
@@ -139,7 +139,7 @@ function Start-ADMaintenance{
         Write-Output "*** Replication Status ***"
         $replstatus.repsum
         Write-Output `n
-        Write-Output "*** Replication Status ***"
+        Write-Output "*** Event Logs ***"
         $events
 
     ) *>&1 >> $maintlog
