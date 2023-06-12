@@ -4,17 +4,12 @@ param(
 
 $EventLogNames = @("Application", "System")
 $evtlogsummary = @() # create log summary
-$addtlmaint = @() # Populate with additional maintenance types
-# $basepath = "C:\temp"
 
 # region additional maintenance functions
     function Start-ADMaintenance {
-        param(
-            [Parameter(Mandatory=$true)]$basepath
-        )
         Invoke-Webrequest -Uri https://raw.githubusercontent.com/russelljt/servermaintenance/master/New-ADMaintenance.ps1 -OutFile $basepath\New-ADMaintenance.ps1
         Start-Sleep -Seconds 10
-        powershell.exe -command "$basepath\New-ADMaintenance.ps1 -basepath $basepath"
+        powershell.exe -command "$psscriptroot\New-ADMaintenance.ps1 -basepath $basepath"
     }
 
 # endregion
@@ -76,19 +71,21 @@ $addtlmaint = @() # Populate with additional maintenance types
     function Get-Roles {
         Invoke-WebRequest -Uri https://raw.githubusercontent.com/russelljt/servermaintenance/master/roles.txt -OutFile C:\temp\roles.txt
         $includedroles = Get-Content -Path C:\temp\roles.txt
-        $roles = (($includedroles | ForEach-Object {[regex]::Escape($_)}) –join "|")
+        $roles = (($includedroles | ForEach-Object {[regex]::Escape($_)}) -join "|")
     
         $installedroles = Get-WindowsFeature | Where-Object {($_.InstallState -eq "Installed") -and ($_.name -match $roles)} | Select-Object Name
+        $rolesout = $installedroles | Format-Table -Autosize
         
         # If roles are detected, start respective separate maintenance script
         Switch ($installedroles.name) {            
-            "AD-Domain-Services" {$addtlmaint += "AD-Domain-Services"}
-            # "FS-DFS-Replication" {}
-            # "Hyper-V" {}
+            "AD-Domain-Services" { Start-ADMaintenance }
+            # "FS-DFS-Replication" {$addtlmaint += }
+            # "Hyper-V" {$addtlmaint += }
         }
+
         Write-Output ":::Installed Server Roles:::"
-        return $installedroles | Format-Table -Autosize
-    } 
+        return $rolesout
+    }
 
     # Collect PowerShell version information
     Function Get-PSVersion {
@@ -367,6 +364,12 @@ $addtlmaint = @() # Populate with additional maintenance types
             $fails
             Write-Output `n
             Write-Output ("######################### Maintenance Report Complete #########################")
+
+            Switch ($installedroles.name) {            
+                "AD-Domain-Services" { Start-ADMaintenance }
+                # "FS-DFS-Replication" {$addtlmaint += }
+                # "Hyper-V" {$addtlmaint += }
+            }
 
         ) *>&1 >> $maintlog
 

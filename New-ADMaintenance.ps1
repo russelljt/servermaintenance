@@ -143,7 +143,6 @@ function Start-ADMaintenance{
         $events
 
     ) *>&1 >> $maintlog
-    
 }
 
 Start-ADMaintenance -basepath $basepath
